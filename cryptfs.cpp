@@ -2130,14 +2130,14 @@ static int test_mount_hw_encrypted_fs(struct crypt_mnt_ftr* crypt_ftr,
             if (is_ice_enabled()) {
 #ifndef CONFIG_HW_DISK_ENCRYPT_PERF
                 if (create_crypto_blk_dev_hw(crypt_ftr, (unsigned char*)&key_index,
-                                          real_blkdev.c_str(), &crypto_blkdev_hw, label, 0)) {
+                                          real_blkdev.c_str(), &crypto_blkdev, label, 0)) {
                     SLOGE("Error creating decrypted block device");
                     rc = -1;
                     goto errout;
                 }
 #endif
             } else {
-                if (create_crypto_blk_dev(crypt_ftr, decrypted_master_key,
+                if (create_crypto_blk_dev_hw(crypt_ftr, decrypted_master_key,
                                           real_blkdev.c_str(), &crypto_blkdev, label, 0)) {
                     SLOGE("Error creating decrypted block device");
                     rc = -1;
@@ -2155,13 +2155,10 @@ static int test_mount_hw_encrypted_fs(struct crypt_mnt_ftr* crypt_ftr,
 
         /* Save the name of the crypto block device
          * so we can mount it when restarting the framework. */
-        if (is_ice_enabled()) {
-#ifndef CONFIG_HW_DISK_ENCRYPT_PERF
-            property_set("ro.crypto.fs_crypto_blkdev", crypto_blkdev_hw.c_str());
+#ifdef CONFIG_HW_DISK_ENCRYPT_PERF
+        if (!is_ice_enabled())
 #endif
-        } else {
-            property_set("ro.crypto.fs_crypto_blkdev", crypto_blkdev.c_str());
-        }
+        property_set("ro.crypto.fs_crypto_blkdev", crypto_blkdev.c_str());
         master_key_saved = 1;
     }
 
@@ -2918,7 +2915,7 @@ int cryptfs_enable_internal(int crypt_type, const char* passwd, int no_ui) {
                           CRYPTO_BLOCK_DEVICE, 0);
 #endif
     else
-      create_crypto_blk_dev(&crypt_ftr, decrypted_master_key, real_blkdev.c_str(), &crypto_blkdev,
+      create_crypto_blk_dev_hw(&crypt_ftr, decrypted_master_key, real_blkdev.c_str(), &crypto_blkdev,
                           CRYPTO_BLOCK_DEVICE, 0);
 #else
     create_crypto_blk_dev(&crypt_ftr, decrypted_master_key, real_blkdev.c_str(), &crypto_blkdev,
